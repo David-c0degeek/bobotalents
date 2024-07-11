@@ -12,8 +12,7 @@ internal static class Program
         
         try
         {
-            var talents = TalentDecoder.GetTalents(url);
-
+            var talents = TalentDecoder.GetTalents(url, out var characterClass);
             if (talents.Count == 0)
             {
                 Console.WriteLine("No talents found.");
@@ -24,6 +23,12 @@ internal static class Program
             {
                 Console.WriteLine($"Talent ID {talent.Id}: Tab = {talent.Tab}, Index = {talent.Index}, Rank = {talent.Rank}, Level = {talent.Level}");
             }
+
+            if (string.IsNullOrEmpty(characterClass?.Trim())) return;
+            
+            var wowheadUrl = TalentDecoder.GenerateWowheadUrl(talents, characterClass);
+            Console.WriteLine($"WoWHead URL: {wowheadUrl}");
+
         }
         catch (Exception ex)
         {
