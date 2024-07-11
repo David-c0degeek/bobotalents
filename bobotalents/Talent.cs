@@ -1,6 +1,6 @@
 ﻿namespace bobotalents;
 
-public class Talent
+public record Talent
 {
     public int Tab { get; init; }
     public int Index { get; init; }
