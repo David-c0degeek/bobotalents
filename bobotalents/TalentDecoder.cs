@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Web;
 
 namespace bobotalents;
 
@@ -12,56 +13,35 @@ internal static class TalentDecoder
 
     public static List<Talent> GetTalents(string url)
     {
-        var talentString = GetUrlParameter(url, "t");
-        if (string.IsNullOrEmpty(talentString))
-        {
-            throw new ArgumentException("Talent string not found in URL", nameof(url));
-        }
-
-        var talents = new List<Talent>();
-        var level = 10;
-
-        for (var i = 0; i < talentString.Length; i += 2)
-        {
-            if (i + 1 >= talentString.Length) break;
-
-            var encodedId = talentString.Substring(i, 2);
-            var decodedId = DecodeId(encodedId);
-
-            if (TalentMap.Talents.TryGetValue(decodedId, out var talentInfo))
-            {
-                talents.Add(new Talent
-                {
-                    Tab = talentInfo.Tab,
-                    Index = talentInfo.Index,
-                    Rank = talentInfo.Rank,
-                    Level = level++,
-                    Id = decodedId
-                });
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Talent ID {decodedId} not found in talent map.");
-            }
-        }
-
-        return talents;
+        var (talentString, _) = ParseUrl(url);
+        return DecodeTalents(talentString);
     }
     
-    public static List<Talent> GetTalents(string url, out string? characterClass)
+    public static (List<Talent> Talents, string? CharacterClass) GetTalentsWithClass(string url)
     {
-        characterClass = GetUrlParameter(url, "c");
-        if (string.IsNullOrEmpty(characterClass))
-        {
-            throw new ArgumentException("Class not found in URL", nameof(url));
-        }
+        var (talentString, characterClass) = ParseUrl(url);
+        var talents = DecodeTalents(talentString);
+        return (talents, characterClass);
+    }
 
-        var talentString = GetUrlParameter(url, "t");
+    private static (string TalentString, string? CharacterClass) ParseUrl(string url)
+    {
+        var uri = new Uri(url);
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        
+        var talentString = query["t"];
+        var characterClass = query["c"];
+
         if (string.IsNullOrEmpty(talentString))
         {
             throw new ArgumentException("Talent string not found in URL", nameof(url));
         }
 
+        return (talentString, characterClass);
+    }
+
+    private static List<Talent> DecodeTalents(string talentString)
+    {
         var talents = new List<Talent>();
         var level = 10;
 
@@ -90,15 +70,6 @@ internal static class TalentDecoder
         }
 
         return talents;
-    }
-
-    private static string? GetUrlParameter(string url, string paramName)
-    {
-        var uri = new Uri(url);
-        var query = uri.Query.TrimStart('?').Split('&');
-        return query
-            .Select(param => param.Split('='))
-            .FirstOrDefault(keyValue => keyValue[0] == paramName)?[1];
     }
 
     private static int DecodeId(string encodedId)
